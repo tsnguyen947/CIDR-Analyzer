@@ -1,0 +1,168 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
+
+public class Analyze {
+
+	public static void main(String args[]){
+		File data = new File("data.txt");
+		Scanner in = null;
+		try {
+			in = new Scanner(data);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		int numSets = in.nextInt();
+		in.nextLine();
+		ArrayList<Set<CIDR>> sets = new ArrayList<Set<CIDR>>(numSets);
+		for(int i = 0; i < numSets; i++)
+			sets.add(new HashSet<CIDR>());
+		while(in.hasNextLine()){
+			StringTokenizer getCIDR = new StringTokenizer(in.nextLine());
+			String nextCIDR = getCIDR.nextToken();
+			int set = Integer.parseInt(getCIDR.nextToken());
+			sets.get(set - 1).add(new CIDR(nextCIDR));
+		}
+		int[][] result = new int[numSets][numSets];
+		String[][] result2 = new String[numSets][numSets];
+		analyze(sets, result);
+		completeAnalyze(sets, result2);
+		printMatrix(result);
+		printMatrix(result2);
+	}
+	
+	public static void analyze(ArrayList<Set<CIDR>> sets, int[][] result){
+		int arraySize = sets.size();
+		for(int i = 0; i < arraySize; i++){
+			for(int j = i; j < arraySize; j++){
+				Object[] a = sets.get(i).toArray();
+				Object[] b= sets.get(j).toArray();
+				int aSize = a.length;
+				int bSize = b.length;
+				for(int x = 0; x < aSize; x++){
+					for(int y = 0; y < bSize; y++){
+						boolean finished = true;
+						CIDR first = (CIDR)a[x];
+						CIDR second = (CIDR)b[y];
+						if((result[i][j] & 4) == 0 || (result[j][i] & 4) == 0){
+							finished = false;
+							if(first.containedIn(second)){
+								result[i][j] |= 6;
+								result[j][i] |= 2;
+							}
+							else if(second.containedIn(first)){
+								result[j][i] |= 6;
+								result[i][j] |= 2;
+							}
+						}
+						if((result[i][j] & 2) == 0 || (result[j][i] & 2) == 0){
+							finished = false;
+							if(first.intersecting(second)){
+								result[j][i] |= 2;
+								result[i][j] |= 2;
+							}
+						}
+						if((result[i][j] & 1) == 0 || (result[j][i] & 1) == 0){
+							finished = false;
+							if(first.isAdjacent(second)){
+								result[j][i] |= 1;
+								result[i][j] |= 1;
+							}
+						}
+						if(finished){
+							x = aSize;
+							y = bSize;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public static void completeAnalyze(ArrayList<Set<CIDR>> sets, String[][] result){
+		int arraySize = sets.size();
+		for(int i = 0; i < arraySize; i++){
+			loop:
+			for(int j = i; j < arraySize; j++){
+				Object[] a = sets.get(i).toArray();
+				Object[] b= sets.get(j).toArray();
+				int aSize = a.length;
+				int bSize = b.length;
+				int aConb,bCona,aIntb,bInta,aAdjb,bAdja;
+				aConb = bCona = aIntb = bInta = aAdjb = bAdja = 0;
+				for(int x = 0; x < aSize; x++){
+					boolean foundConA = false;
+					boolean foundConB = false;
+					boolean foundIntA = false;
+					boolean foundIntB = false;
+					boolean foundAdjA = false;
+					boolean foundAdjB = false;
+					for(int y = 0; y < bSize; y++){
+						CIDR first = (CIDR)a[x];
+						CIDR second = (CIDR)b[y];
+						if(!foundConA && first.containedIn(second)){
+							foundConA = true;
+							aConb++;
+						}
+						else if(!foundConB && second.containedIn(first)){
+							foundConB = true;
+							bCona++;
+						}
+						if(!foundIntA && first.intersecting(second)){
+							foundIntA = true;
+							aIntb++;
+						}
+						else if(!foundIntB && second.intersecting(first)){
+							foundIntB = true;
+							bInta++;
+						}
+						if(!foundAdjA && first.isAdjacent(second)){
+							foundAdjA = true;
+							aAdjb++;
+						}
+						else if(!foundAdjB && second.isAdjacent(first)){
+							foundAdjB = true;
+							bAdja++;
+						}
+						if(foundConA && foundConB && foundIntA && foundIntB && foundAdjA && foundAdjB)
+							break;
+					}
+				}
+				StringBuilder sb = new StringBuilder();
+				sb.append(String.format("%d,%d: %d (", i + 1, j + 1, a.length));
+				sb.append(String.format("%-4d",aConb));
+				sb.append("| ");
+				sb.append(String.format("%-4d",aIntb));
+				sb.append("| ");
+				sb.append(String.format("%-4d",aAdjb));
+				sb.append(")");
+				result[i][j] = sb.toString();
+				sb.setLength(0);
+				sb.append(String.format("%d,%d: %d (", j + 1, i + 1, b.length));
+				sb.append(String.format("%-4d",bCona));
+				sb.append("| ");
+				sb.append(String.format("%-4d",bInta));
+				sb.append("| ");
+				sb.append(String.format("%-4d",bAdja));
+				sb.append(")");
+				result[j][i] = sb.toString();
+			}
+		}
+	}
+	
+	public static void printMatrix(int[][] result){
+		for(int[] set1: result){
+			System.out.print("[");
+			for(int set2: set1){
+				System.out.print(" " + String.format("%3s", Integer.toBinaryString(set2)).replace(" ", "0"));
+			}
+			System.out.println(" ]");
+		}
+	}
+	
+	public static void printMatrix(String[][] result){
+		for(String[] set1: result){
+			System.out.printf("%s\n",Arrays.deepToString(set1));
+		}
+	}
+}
