@@ -68,8 +68,8 @@ public class CIDR {
 		return sb.toString();
 	}
 	
-	public boolean containedIn(CIDR other){
-		return this.start_IP > other.getStart() && this.end_IP < other.getEnd();
+	public boolean contains(CIDR other){
+		return this.start_IP < other.getStart() && this.end_IP > other.getEnd();
 	}
 	
 	public boolean intersecting(CIDR other){
