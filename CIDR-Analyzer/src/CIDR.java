@@ -56,6 +56,7 @@ public class CIDR {
 		return IP;
 	}
 
+	/*helper method to convert a long to it's IP address representation*/
 	public static String toIP(long n){
 		StringBuilder sb = new StringBuilder();
 		sb.append(n & 255);
@@ -68,15 +69,18 @@ public class CIDR {
 		return sb.toString();
 	}
 	
+	/*check if the current CIDR contains the other CIDR*/
 	public boolean contains(CIDR other){
 		return this.start_IP < other.getStart() && this.end_IP > other.getEnd();
 	}
 	
+	/*check if the current CIDR intersects the other CIDR*/
 	public boolean intersecting(CIDR other){
 		return this.start_IP <= other.getEnd() && this.end_IP >= other.getStart() ||
 				other.getStart() <= this.end_IP && other.getEnd() >= this.start_IP;
 	}
 	
+	/*check if the current CIDR is adjacent to the other CIDR*/
 	public boolean isAdjacent(CIDR other){
 		return this.start_IP == other.getEnd() + 1 || this.end_IP == other.getStart() - 1;
 	}
